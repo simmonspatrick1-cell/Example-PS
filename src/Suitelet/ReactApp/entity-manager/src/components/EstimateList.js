@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import '../App.css';
+import API_CONFIG from '../config/api';
 
 function EstimateList() {
   const [estimates, setEstimates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Placeholder for RESTlet API endpoint URL
-  // This should be replaced with the actual NetSuite RESTlet URL once deployed as a Suitelet
-  const apiUrl = 'placeholder_restlet_url/estimates';
+  // NetSuite RESTlet API endpoint URL
+  const apiUrl = API_CONFIG.getUrl(API_CONFIG.endpoints.estimates);
 
   useEffect(() => {
     // Function to fetch estimate data from RESTlet API

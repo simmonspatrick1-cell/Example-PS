@@ -36,10 +36,12 @@ function(record, search, log, error, http) {
                 return handleEstimateGet(entityId);
             } else if (entityType === 'purchaseorders') {
                 return handlePurchaseOrderGet(entityId);
+            } else if (entityType === 'projecttasks') {
+                return handleProjectTaskGet(entityId);
             } else {
                 return {
                     success: false,
-                    message: 'Unsupported entity type. Use "customers", "items", "projects", "estimates", or "purchaseorders".'
+                    message: 'Unsupported entity type. Use "customers", "items", "projects", "estimates", "purchaseorders", or "projecttasks".'
                 };
             }
         } catch (e) {
@@ -91,10 +93,12 @@ function(record, search, log, error, http) {
                 return handleEstimatePut(entityId, data);
             } else if (entityType === 'purchaseorders') {
                 return handlePurchaseOrderPut(entityId, data);
+            } else if (entityType === 'projecttasks') {
+                return handleProjectTaskPut(entityId, data);
             } else {
                 return {
                     success: false,
-                    message: 'Unsupported entity type. Use "customers", "items", "projects", "estimates", or "purchaseorders".'
+                    message: 'Unsupported entity type. Use "customers", "items", "projects", "estimates", "purchaseorders", or "projecttasks".'
                 };
             }
         } catch (e) {
@@ -138,10 +142,12 @@ function(record, search, log, error, http) {
                 return handleEstimatePost(data);
             } else if (entityType === 'purchaseorders') {
                 return handlePurchaseOrderPost(data);
+            } else if (entityType === 'projecttasks') {
+                return handleProjectTaskPost(data);
             } else {
                 return {
                     success: false,
-                    message: 'Unsupported entity type. Use "customers", "items", "projects", "estimates", or "purchaseorders".'
+                    message: 'Unsupported entity type. Use "customers", "items", "projects", "estimates", "purchaseorders", or "projecttasks".'
                 };
             }
         } catch (e) {
@@ -192,10 +198,12 @@ function(record, search, log, error, http) {
                 return handleEstimateDelete(entityId);
             } else if (entityType === 'purchaseorders') {
                 return handlePurchaseOrderDelete(entityId);
+            } else if (entityType === 'projecttasks') {
+                return handleProjectTaskDelete(entityId);
             } else {
                 return {
                     success: false,
-                    message: 'Unsupported entity type. Use "customers", "items", "projects", "estimates", or "purchaseorders".'
+                    message: 'Unsupported entity type. Use "customers", "items", "projects", "estimates", "purchaseorders", or "projecttasks".'
                 };
             }
         } catch (e) {
@@ -725,6 +733,116 @@ function(record, search, log, error, http) {
             success: true,
             message: 'Item deleted successfully',
             id: itemId
+        };
+    }
+
+    // Helper functions for Project Task operations
+    function handleProjectTaskGet(taskId) {
+        if (taskId) {
+            var task = record.load({
+                type: 'projecttask',
+                id: taskId,
+                isDynamic: false
+            });
+            return {
+                success: true,
+                data: {
+                    id: task.id,
+                    title: task.getValue({ fieldId: 'title' }),
+                    company: task.getValue({ fieldId: 'company' }),
+                    status: task.getValue({ fieldId: 'status' }),
+                    percentComplete: task.getValue({ fieldId: 'percenttimecomplete' }) || 0,
+                    startDate: task.getValue({ fieldId: 'startdate' }),
+                    endDate: task.getValue({ fieldId: 'enddate' })
+                }
+            };
+        } else {
+            var taskSearch = search.create({
+                type: 'projecttask',
+                columns: ['internalid', 'title', 'company', 'status', 'percenttimecomplete', 'startdate', 'enddate'],
+                filters: []
+            });
+            var searchResults = taskSearch.run().getRange({ start: 0, end: 100 });
+            var tasks = searchResults.map(function(result) {
+                return {
+                    id: result.getValue('internalid'),
+                    title: result.getValue('title'),
+                    company: result.getValue('company'),
+                    status: result.getValue('status'),
+                    percentComplete: result.getValue('percenttimecomplete') || 0,
+                    startDate: result.getValue('startdate'),
+                    endDate: result.getValue('enddate')
+                };
+            });
+            return {
+                success: true,
+                data: tasks
+            };
+        }
+    }
+
+    function handleProjectTaskPost(data) {
+        var task = record.create({
+            type: 'projecttask',
+            isDynamic: true
+        });
+        if (data.title) task.setValue({ fieldId: 'title', value: data.title });
+        if (data.company) task.setValue({ fieldId: 'company', value: data.company });
+        if (data.status) task.setValue({ fieldId: 'status', value: data.status });
+        if (data.percentComplete) task.setValue({ fieldId: 'percenttimecomplete', value: data.percentComplete });
+        if (data.startDate) task.setValue({ fieldId: 'startdate', value: data.startDate });
+        if (data.endDate) task.setValue({ fieldId: 'enddate', value: data.endDate });
+
+        var taskId = task.save();
+        log.audit({
+            title: 'Project Task Created',
+            details: 'Project Task created with ID: ' + taskId
+        });
+        return {
+            success: true,
+            message: 'Project Task created successfully',
+            id: taskId
+        };
+    }
+
+    function handleProjectTaskPut(taskId, data) {
+        var task = record.load({
+            type: 'projecttask',
+            id: taskId,
+            isDynamic: true
+        });
+        if (data.title) task.setValue({ fieldId: 'title', value: data.title });
+        if (data.company) task.setValue({ fieldId: 'company', value: data.company });
+        if (data.status) task.setValue({ fieldId: 'status', value: data.status });
+        if (data.percentComplete) task.setValue({ fieldId: 'percenttimecomplete', value: data.percentComplete });
+        if (data.startDate) task.setValue({ fieldId: 'startdate', value: data.startDate });
+        if (data.endDate) task.setValue({ fieldId: 'enddate', value: data.endDate });
+
+        var updatedId = task.save();
+        log.audit({
+            title: 'Project Task Updated',
+            details: 'Project Task updated with ID: ' + updatedId
+        });
+        return {
+            success: true,
+            message: 'Project Task updated successfully',
+            id: updatedId
+        };
+    }
+
+    function handleProjectTaskDelete(taskId) {
+        record.delete({
+            type: 'projecttask',
+            id: taskId
+        });
+        log.audit({
+            title: 'Project Task Deleted',
+            details: 'Project Task deleted with ID: ' + taskId
+        });
+        return {
+            success: true,
+            message: 'Project Task deleted successfully',
+            id: taskId
         };
     }
 
