@@ -46,7 +46,49 @@ function CustomerList() {
   }, [apiUrl]);
 
   if (loading) return <div>Loading customers...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (error) return <div className="App-error">Error: {error}</div>;
+
+  // Function to handle adding a new customer
+  const handleAddCustomer = async () => {
+    try {
+      const newCustomer = {
+        companyName: prompt("Enter company name:"),
+        email: prompt("Enter email:"),
+        phone: prompt("Enter phone:")
+      };
+      
+      if (!newCustomer.companyName) {
+        alert("Company name is required.");
+        return;
+      }
+
+      setLoading(true);
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newCustomer)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to add customer: ${response.status} ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      if (result.success) {
+        setCustomers([...customers, { ...newCustomer, id: result.id, address: '' }]);
+        alert("Customer added successfully!");
+      } else {
+        throw new Error(result.message || "Failed to add customer");
+      }
+    } catch (err) {
+      setError(`Error adding customer: ${err.message}`);
+      console.error('Add Customer Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="App-section">
@@ -77,7 +119,7 @@ function CustomerList() {
           </tbody>
         </table>
       )}
-      <button className="App-button" onClick={() => alert('Add Customer functionality to be implemented')}>
+      <button className="App-button" onClick={handleAddCustomer}>
         Add Customer
       </button>
     </div>

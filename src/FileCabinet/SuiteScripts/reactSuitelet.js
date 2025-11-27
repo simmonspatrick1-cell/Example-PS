@@ -199,7 +199,7 @@ function(file, log, record, search) {
                 return;
             }
 
-            if (context.request.method === 'GET') {
+            if (context.request.method === 'GET' && !entityParam) {
                 // Path to the bundled React app files in the File Cabinet
                 var buildFolderPath = '/Suitelet/ReactApp/entity-manager/build';
 
@@ -211,8 +211,8 @@ function(file, log, record, search) {
                 var indexContent = indexFile.getContents();
 
                 // Get File Cabinet URLs for static assets
-                var jsFileUrl = getFileCabinetUrl(buildFolderPath + '/static/js/main.ee3d18e2.js');
-                var cssFileUrl = getFileCabinetUrl(buildFolderPath + '/static/css/main.a31a5a9c.css');
+                var jsFileUrl = getFileCabinetUrl(buildFolderPath + '/static/js/main.604b35ad.js');
+                var cssFileUrl = getFileCabinetUrl(buildFolderPath + '/static/css/main.9f828705.css');
                 var faviconUrl = getFileCabinetUrl(buildFolderPath + '/favicon.ico');
                 var logo192Url = getFileCabinetUrl(buildFolderPath + '/logo192.png');
                 var manifestUrl = getFileCabinetUrl(buildFolderPath + '/manifest.json');
@@ -225,13 +225,13 @@ function(file, log, record, search) {
                 // Replace paths with direct File Cabinet URLs
                 if (jsFileUrl) {
                     indexContent = indexContent.replace(
-                        '/static/js/main.ee3d18e2.js',
+                        '/static/js/main.604b35ad.js',
                         jsFileUrl
                     );
                 }
                 if (cssFileUrl) {
                     indexContent = indexContent.replace(
-                        '/static/css/main.a31a5a9c.css',
+                        '/static/css/main.9f828705.css',
                         cssFileUrl
                     );
                 }
@@ -261,13 +261,22 @@ function(file, log, record, search) {
                     title: 'React Suitelet Served',
                     details: 'Successfully served index.html with File Cabinet URLs'
                 });
+            } else if (context.request.method === 'POST' && entityParam) {
+                // Handle create operations
+                handleCreateRequest(context);
+            } else if (context.request.method === 'PUT' && entityParam) {
+                // Handle update operations
+                handleUpdateRequest(context);
+            } else if (context.request.method === 'DELETE' && entityParam) {
+                // Handle delete operations
+                handleDeleteRequest(context);
             } else {
-                // Handle other request methods if needed
+                // Handle unsupported methods
                 context.response.write('Method Not Allowed');
 
                 log.error({
                     title: 'Invalid Request Method',
-                    details: 'Request method ' + context.request.method + ' not supported.'
+                    details: 'Request method ' + context.request.method + ' not supported for entity: ' + entityParam
                 });
             }
         } catch (e) {
@@ -276,6 +285,195 @@ function(file, log, record, search) {
                 details: e.toString()
             });
             context.response.write('An error occurred while loading the application: ' + JSON.stringify(e));
+        }
+    }
+
+    /**
+     * Handle CREATE requests for entities
+     */
+    function handleCreateRequest(context) {
+        try {
+            var entityType = context.request.parameters.entity;
+            var body = context.request.body ? JSON.parse(context.request.body) : {};
+
+            context.response.setHeader({
+                name: 'Content-Type',
+                value: 'application/json'
+            });
+
+            log.debug({
+                title: 'Create Request',
+                details: 'Entity: ' + entityType + ', Data: ' + JSON.stringify(body)
+            });
+
+            if (entityType === 'customers') {
+                var customerRec = record.create({
+                    type: record.Type.CUSTOMER,
+                    isDynamic: true
+                });
+                customerRec.setValue({
+                    fieldId: 'companyname',
+                    value: body.companyName || 'New Customer'
+                });
+                customerRec.setValue({
+                    fieldId: 'email',
+                    value: body.email || ''
+                });
+                customerRec.setValue({
+                    fieldId: 'phone',
+                    value: body.phone || ''
+                });
+                var customerId = customerRec.save();
+                context.response.write(JSON.stringify({
+                    success: true,
+                    message: 'Customer created successfully',
+                    id: customerId
+                }));
+            } else {
+                context.response.write(JSON.stringify({
+                    success: false,
+                    message: 'Unsupported entity type for creation: ' + entityType
+                }));
+            }
+        } catch (e) {
+            log.error({
+                title: 'Create Error',
+                details: e.toString()
+            });
+            context.response.write(JSON.stringify({
+                success: false,
+                message: 'Error creating entity: ' + e.toString()
+            }));
+        }
+    }
+
+    /**
+     * Handle UPDATE requests for entities
+     */
+    function handleUpdateRequest(context) {
+        try {
+            var entityType = context.request.parameters.entity;
+            var body = context.request.body ? JSON.parse(context.request.body) : {};
+            var entityId = body.id;
+
+            context.response.setHeader({
+                name: 'Content-Type',
+                value: 'application/json'
+            });
+
+            log.debug({
+                title: 'Update Request',
+                details: 'Entity: ' + entityType + ', ID: ' + entityId + ', Data: ' + JSON.stringify(body)
+            });
+
+            if (!entityId) {
+                context.response.write(JSON.stringify({
+                    success: false,
+                    message: 'Entity ID is required for update'
+                }));
+                return;
+            }
+
+            if (entityType === 'customers') {
+                var customerRec = record.load({
+                    type: record.Type.CUSTOMER,
+                    id: entityId,
+                    isDynamic: true
+                });
+                if (body.companyName) {
+                    customerRec.setValue({
+                        fieldId: 'companyname',
+                        value: body.companyName
+                    });
+                }
+                if (body.email) {
+                    customerRec.setValue({
+                        fieldId: 'email',
+                        value: body.email
+                    });
+                }
+                if (body.phone) {
+                    customerRec.setValue({
+                        fieldId: 'phone',
+                        value: body.phone
+                    });
+                }
+                var customerId = customerRec.save();
+                context.response.write(JSON.stringify({
+                    success: true,
+                    message: 'Customer updated successfully',
+                    id: customerId
+                }));
+            } else {
+                context.response.write(JSON.stringify({
+                    success: false,
+                    message: 'Unsupported entity type for update: ' + entityType
+                }));
+            }
+        } catch (e) {
+            log.error({
+                title: 'Update Error',
+                details: e.toString()
+            });
+            context.response.write(JSON.stringify({
+                success: false,
+                message: 'Error updating entity: ' + e.toString()
+            }));
+        }
+    }
+
+    /**
+     * Handle DELETE requests for entities
+     */
+    function handleDeleteRequest(context) {
+        try {
+            var entityType = context.request.parameters.entity;
+            var body = context.request.body ? JSON.parse(context.request.body) : {};
+            var entityId = body.id;
+
+            context.response.setHeader({
+                name: 'Content-Type',
+                value: 'application/json'
+            });
+
+            log.debug({
+                title: 'Delete Request',
+                details: 'Entity: ' + entityType + ', ID: ' + entityId
+            });
+
+            if (!entityId) {
+                context.response.write(JSON.stringify({
+                    success: false,
+                    message: 'Entity ID is required for deletion'
+                }));
+                return;
+            }
+
+            if (entityType === 'customers') {
+                record.delete({
+                    type: record.Type.CUSTOMER,
+                    id: entityId
+                });
+                context.response.write(JSON.stringify({
+                    success: true,
+                    message: 'Customer deleted successfully',
+                    id: entityId
+                }));
+            } else {
+                context.response.write(JSON.stringify({
+                    success: false,
+                    message: 'Unsupported entity type for deletion: ' + entityType
+                }));
+            }
+        } catch (e) {
+            log.error({
+                title: 'Delete Error',
+                details: e.toString()
+            });
+            context.response.write(JSON.stringify({
+                success: false,
+                message: 'Error deleting entity: ' + e.toString()
+            }));
         }
     }
 
