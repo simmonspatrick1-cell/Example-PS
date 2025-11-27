@@ -4,6 +4,8 @@ import CustomerList from './components/CustomerList';
 import ItemList from './components/ItemList';
 import ProjectList from './components/ProjectList';
 import EstimateList from './components/EstimateList';
+import ProjectTaskList from './components/ProjectTaskList';
+import PurchaseOrderList from './components/PurchaseOrderList';
 
 function App() {
   return (
@@ -17,6 +19,8 @@ function App() {
         <ItemList />
         <ProjectList />
         <EstimateList />
+        <ProjectTaskList />
+        <PurchaseOrderList />
       </main>
     </div>
   );
