@@ -30,10 +30,14 @@ function(record, search, log, error, http) {
                 return handleCustomerGet(entityId);
             } else if (entityType === 'items') {
                 return handleItemGet(entityId);
+            } else if (entityType === 'projects') {
+                return handleProjectGet(entityId);
+            } else if (entityType === 'estimates') {
+                return handleEstimateGet(entityId);
             } else {
                 return {
                     success: false,
-                    message: 'Unsupported entity type. Use "customers" or "items".'
+                    message: 'Unsupported entity type. Use "customers", "items", "projects", or "estimates".'
                 };
             }
         } catch (e) {
@@ -79,10 +83,14 @@ function(record, search, log, error, http) {
                 return handleCustomerPut(entityId, data);
             } else if (entityType === 'items') {
                 return handleItemPut(entityId, data);
+            } else if (entityType === 'projects') {
+                return handleProjectPut(entityId, data);
+            } else if (entityType === 'estimates') {
+                return handleEstimatePut(entityId, data);
             } else {
                 return {
                     success: false,
-                    message: 'Unsupported entity type. Use "customers" or "items".'
+                    message: 'Unsupported entity type. Use "customers", "items", "projects", or "estimates".'
                 };
             }
         } catch (e) {
@@ -120,10 +128,14 @@ function(record, search, log, error, http) {
                 return handleCustomerPost(data);
             } else if (entityType === 'items') {
                 return handleItemPost(data);
+            } else if (entityType === 'projects') {
+                return handleProjectPost(data);
+            } else if (entityType === 'estimates') {
+                return handleEstimatePost(data);
             } else {
                 return {
                     success: false,
-                    message: 'Unsupported entity type. Use "customers" or "items".'
+                    message: 'Unsupported entity type. Use "customers", "items", "projects", or "estimates".'
                 };
             }
         } catch (e) {
@@ -168,10 +180,14 @@ function(record, search, log, error, http) {
                 return handleCustomerDelete(entityId);
             } else if (entityType === 'items') {
                 return handleItemDelete(entityId);
+            } else if (entityType === 'projects') {
+                return handleProjectDelete(entityId);
+            } else if (entityType === 'estimates') {
+                return handleEstimateDelete(entityId);
             } else {
                 return {
                     success: false,
-                    message: 'Unsupported entity type. Use "customers" or "items".'
+                    message: 'Unsupported entity type. Use "customers", "items", "projects", or "estimates".'
                 };
             }
         } catch (e) {
@@ -285,6 +301,216 @@ function(record, search, log, error, http) {
             success: true,
             message: 'Customer deleted successfully',
             id: customerId
+        };
+    }
+
+    // Helper functions for Project operations
+    function handleProjectGet(projectId) {
+        if (projectId) {
+            var project = record.load({
+                type: 'project', // Using a generic project type; adjust based on actual NetSuite record type
+                id: projectId,
+                isDynamic: false
+            });
+            return {
+                success: true,
+                data: {
+                    id: project.id,
+                    name: project.getValue({ fieldId: 'title' }) || project.getValue({ fieldId: 'entityid' }),
+                    status: project.getValue({ fieldId: 'status' }) || 'Unknown',
+                    customer: project.getValue({ fieldId: 'customer' }) || 'N/A',
+                    startDate: project.getValue({ fieldId: 'startdate' }) || 'N/A',
+                    endDate: project.getValue({ fieldId: 'enddate' }) || 'N/A'
+                }
+            };
+        } else {
+            var projectSearch = search.create({
+                type: 'project',
+                columns: ['internalid', 'entityid', 'title', 'status', 'customer', 'startdate', 'enddate'],
+                filters: []
+            });
+            var searchResults = projectSearch.run().getRange({ start: 0, end: 100 });
+            var projects = searchResults.map(function(result) {
+                return {
+                    id: result.getValue('internalid'),
+                    name: result.getValue('title') || result.getValue('entityid'),
+                    status: result.getValue('status') || 'Unknown',
+                    customer: result.getValue('customer') || 'N/A',
+                    startDate: result.getValue('startdate') || 'N/A',
+                    endDate: result.getValue('enddate') || 'N/A'
+                };
+            });
+            return {
+                success: true,
+                data: projects
+            };
+        }
+    }
+
+    function handleProjectPost(data) {
+        var project = record.create({
+            type: 'project',
+            isDynamic: true
+        });
+        project.setValue({ fieldId: 'title', value: data.name });
+        if (data.status) project.setValue({ fieldId: 'status', value: data.status });
+        if (data.customer) project.setValue({ fieldId: 'customer', value: data.customer });
+        if (data.startDate) project.setValue({ fieldId: 'startdate', value: data.startDate });
+        if (data.endDate) project.setValue({ fieldId: 'enddate', value: data.endDate });
+        
+        var projectId = project.save();
+        log.audit({
+            title: 'Project Created',
+            details: 'Project created with ID: ' + projectId
+        });
+        return {
+            success: true,
+            message: 'Project created successfully',
+            id: projectId
+        };
+    }
+
+    function handleProjectPut(projectId, data) {
+        var project = record.load({
+            type: 'project',
+            id: projectId,
+            isDynamic: true
+        });
+        if (data.name) project.setValue({ fieldId: 'title', value: data.name });
+        if (data.status) project.setValue({ fieldId: 'status', value: data.status });
+        if (data.customer) project.setValue({ fieldId: 'customer', value: data.customer });
+        if (data.startDate) project.setValue({ fieldId: 'startdate', value: data.startDate });
+        if (data.endDate) project.setValue({ fieldId: 'enddate', value: data.endDate });
+        
+        var updatedId = project.save();
+        log.audit({
+            title: 'Project Updated',
+            details: 'Project updated with ID: ' + updatedId
+        });
+        return {
+            success: true,
+            message: 'Project updated successfully',
+            id: updatedId
+        };
+    }
+
+    function handleProjectDelete(projectId) {
+        record.delete({
+            type: 'project',
+            id: projectId
+        });
+        log.audit({
+            title: 'Project Deleted',
+            details: 'Project deleted with ID: ' + projectId
+        });
+        return {
+            success: true,
+            message: 'Project deleted successfully',
+            id: projectId
+        };
+    }
+
+    // Helper functions for Estimate operations
+    function handleEstimateGet(estimateId) {
+        if (estimateId) {
+            var estimate = record.load({
+                type: record.Type.ESTIMATE,
+                id: estimateId,
+                isDynamic: false
+            });
+            return {
+                success: true,
+                data: {
+                    id: estimate.id,
+                    estimateNumber: estimate.getValue({ fieldId: 'tranid' }),
+                    customer: estimate.getValue({ fieldId: 'entity' }),
+                    total: estimate.getValue({ fieldId: 'total' }) || 0,
+                    status: estimate.getValue({ fieldId: 'status' }) || 'Pending',
+                    date: estimate.getValue({ fieldId: 'trandate' })
+                }
+            };
+        } else {
+            var estimateSearch = search.create({
+                type: search.Type.ESTIMATE,
+                columns: ['internalid', 'tranid', 'entity', 'total', 'status', 'trandate'],
+                filters: []
+            });
+            var searchResults = estimateSearch.run().getRange({ start: 0, end: 100 });
+            var estimates = searchResults.map(function(result) {
+                return {
+                    id: result.getValue('internalid'),
+                    estimateNumber: result.getValue('tranid'),
+                    customer: result.getValue('entity'),
+                    total: result.getValue('total') || 0,
+                    status: result.getValue('status') || 'Pending',
+                    date: result.getValue('trandate')
+                };
+            });
+            return {
+                success: true,
+                data: estimates
+            };
+        }
+    }
+
+    function handleEstimatePost(data) {
+        var estimate = record.create({
+            type: record.Type.ESTIMATE,
+            isDynamic: true
+        });
+        if (data.customer) estimate.setValue({ fieldId: 'entity', value: data.customer });
+        if (data.total) estimate.setValue({ fieldId: 'total', value: data.total });
+        if (data.status) estimate.setValue({ fieldId: 'status', value: data.status });
+        if (data.date) estimate.setValue({ fieldId: 'trandate', value: data.date });
+        
+        var estimateId = estimate.save();
+        log.audit({
+            title: 'Estimate Created',
+            details: 'Estimate created with ID: ' + estimateId
+        });
+        return {
+            success: true,
+            message: 'Estimate created successfully',
+            id: estimateId
+        };
+    }
+
+    function handleEstimatePut(estimateId, data) {
+        var estimate = record.load({
+            type: record.Type.ESTIMATE,
+            id: estimateId,
+            isDynamic: true
+        });
+        if (data.customer) estimate.setValue({ fieldId: 'entity', value: data.customer });
+        if (data.total) estimate.setValue({ fieldId: 'total', value: data.total });
+        if (data.status) estimate.setValue({ fieldId: 'status', value: data.status });
+        if (data.date) estimate.setValue({ fieldId: 'trandate', value: data.date });
+        
+        var updatedId = estimate.save();
+        log.audit({
+            title: 'Estimate Updated',
+            details: 'Estimate updated with ID: ' + updatedId
+        });
+        return {
+            success: true,
+            message: 'Estimate updated successfully',
+            id: updatedId
+        };
+    }
+
+    function handleEstimateDelete(estimateId) {
+        record.delete({
+            type: record.Type.ESTIMATE,
+            id: estimateId
+        });
+        log.audit({
+            title: 'Estimate Deleted',
+            details: 'Estimate deleted with ID: ' + estimateId
+        });
+        return {
+            success: true,
+            message: 'Estimate deleted successfully',
+            id: estimateId
         };
     }
 
