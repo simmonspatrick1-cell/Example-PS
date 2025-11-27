@@ -34,10 +34,12 @@ function(record, search, log, error, http) {
                 return handleProjectGet(entityId);
             } else if (entityType === 'estimates') {
                 return handleEstimateGet(entityId);
+            } else if (entityType === 'purchaseorders') {
+                return handlePurchaseOrderGet(entityId);
             } else {
                 return {
                     success: false,
-                    message: 'Unsupported entity type. Use "customers", "items", "projects", or "estimates".'
+                    message: 'Unsupported entity type. Use "customers", "items", "projects", "estimates", or "purchaseorders".'
                 };
             }
         } catch (e) {
@@ -87,10 +89,12 @@ function(record, search, log, error, http) {
                 return handleProjectPut(entityId, data);
             } else if (entityType === 'estimates') {
                 return handleEstimatePut(entityId, data);
+            } else if (entityType === 'purchaseorders') {
+                return handlePurchaseOrderPut(entityId, data);
             } else {
                 return {
                     success: false,
-                    message: 'Unsupported entity type. Use "customers", "items", "projects", or "estimates".'
+                    message: 'Unsupported entity type. Use "customers", "items", "projects", "estimates", or "purchaseorders".'
                 };
             }
         } catch (e) {
@@ -132,10 +136,12 @@ function(record, search, log, error, http) {
                 return handleProjectPost(data);
             } else if (entityType === 'estimates') {
                 return handleEstimatePost(data);
+            } else if (entityType === 'purchaseorders') {
+                return handlePurchaseOrderPost(data);
             } else {
                 return {
                     success: false,
-                    message: 'Unsupported entity type. Use "customers", "items", "projects", or "estimates".'
+                    message: 'Unsupported entity type. Use "customers", "items", "projects", "estimates", or "purchaseorders".'
                 };
             }
         } catch (e) {
@@ -184,10 +190,12 @@ function(record, search, log, error, http) {
                 return handleProjectDelete(entityId);
             } else if (entityType === 'estimates') {
                 return handleEstimateDelete(entityId);
+            } else if (entityType === 'purchaseorders') {
+                return handlePurchaseOrderDelete(entityId);
             } else {
                 return {
                     success: false,
-                    message: 'Unsupported entity type. Use "customers", "items", "projects", or "estimates".'
+                    message: 'Unsupported entity type. Use "customers", "items", "projects", "estimates", or "purchaseorders".'
                 };
             }
         } catch (e) {
@@ -511,6 +519,110 @@ function(record, search, log, error, http) {
             success: true,
             message: 'Estimate deleted successfully',
             id: estimateId
+        };
+    }
+
+    // Helper functions for Purchase Order operations
+    function handlePurchaseOrderGet(purchaseOrderId) {
+        if (purchaseOrderId) {
+            var purchaseOrder = record.load({
+                type: record.Type.PURCHASE_ORDER,
+                id: purchaseOrderId,
+                isDynamic: false
+            });
+            return {
+                success: true,
+                data: {
+                    id: purchaseOrder.id,
+                    poNumber: purchaseOrder.getValue({ fieldId: 'tranid' }),
+                    vendor: purchaseOrder.getValue({ fieldId: 'entity' }),
+                    total: purchaseOrder.getValue({ fieldId: 'total' }) || 0,
+                    status: purchaseOrder.getValue({ fieldId: 'status' }) || 'Pending',
+                    date: purchaseOrder.getValue({ fieldId: 'trandate' })
+                }
+            };
+        } else {
+            var poSearch = search.create({
+                type: search.Type.PURCHASE_ORDER,
+                columns: ['internalid', 'tranid', 'entity', 'total', 'status', 'trandate'],
+                filters: []
+            });
+            var searchResults = poSearch.run().getRange({ start: 0, end: 100 });
+            var purchaseOrders = searchResults.map(function(result) {
+                return {
+                    id: result.getValue('internalid'),
+                    poNumber: result.getValue('tranid'),
+                    vendor: result.getValue('entity'),
+                    total: result.getValue('total') || 0,
+                    status: result.getValue('status') || 'Pending',
+                    date: result.getValue('trandate')
+                };
+            });
+            return {
+                success: true,
+                data: purchaseOrders
+            };
+        }
+    }
+
+    function handlePurchaseOrderPost(data) {
+        var purchaseOrder = record.create({
+            type: record.Type.PURCHASE_ORDER,
+            isDynamic: true
+        });
+        if (data.vendor) purchaseOrder.setValue({ fieldId: 'entity', value: data.vendor });
+        if (data.total) purchaseOrder.setValue({ fieldId: 'total', value: data.total });
+        if (data.status) purchaseOrder.setValue({ fieldId: 'status', value: data.status });
+        if (data.date) purchaseOrder.setValue({ fieldId: 'trandate', value: data.date });
+        
+        var poId = purchaseOrder.save();
+        log.audit({
+            title: 'Purchase Order Created',
+            details: 'Purchase Order created with ID: ' + poId
+        });
+        return {
+            success: true,
+            message: 'Purchase Order created successfully',
+            id: poId
+        };
+    }
+
+    function handlePurchaseOrderPut(purchaseOrderId, data) {
+        var purchaseOrder = record.load({
+            type: record.Type.PURCHASE_ORDER,
+            id: purchaseOrderId,
+            isDynamic: true
+        });
+        if (data.vendor) purchaseOrder.setValue({ fieldId: 'entity', value: data.vendor });
+        if (data.total) purchaseOrder.setValue({ fieldId: 'total', value: data.total });
+        if (data.status) purchaseOrder.setValue({ fieldId: 'status', value: data.status });
+        if (data.date) purchaseOrder.setValue({ fieldId: 'trandate', value: data.date });
+        
+        var updatedId = purchaseOrder.save();
+        log.audit({
+            title: 'Purchase Order Updated',
+            details: 'Purchase Order updated with ID: ' + updatedId
+        });
+        return {
+            success: true,
+            message: 'Purchase Order updated successfully',
+            id: updatedId
+        };
+    }
+
+    function handlePurchaseOrderDelete(purchaseOrderId) {
+        record.delete({
+            type: record.Type.PURCHASE_ORDER,
+            id: purchaseOrderId
+        });
+        log.audit({
+            title: 'Purchase Order Deleted',
+            details: 'Purchase Order deleted with ID: ' + purchaseOrderId
+        });
+        return {
+            success: true,
+            message: 'Purchase Order deleted successfully',
+            id: purchaseOrderId
         };
     }
 
