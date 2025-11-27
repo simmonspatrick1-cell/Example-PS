@@ -19,8 +19,9 @@ function(file, serverWidget, log) {
         try {
             if (context.request.method === 'GET') {
                 // Path to the bundled React app files in the File Cabinet
-                // Adjust the path based on where the build files are stored after deployment
-                var buildFolderPath = '/SuiteScripts/entity-manager/build/';
+                // Adjust the path based on where the build files are stored after deployment to NetSuite
+                // For local development, this points to the build folder; update to actual NetSuite File Cabinet path post-deployment
+                var buildFolderPath = '/Suitelet/ReactApp/entity-manager/build/';
                 
                 // Load the main index.html file
                 var indexFile = file.load({
