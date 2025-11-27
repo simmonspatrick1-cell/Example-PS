@@ -14,24 +14,31 @@ function ItemList() {
     // Function to fetch item data from RESTlet API
     const fetchItems = async () => {
       try {
-        // In a real NetSuite Suitelet environment, this would use the actual RESTlet endpoint
-        // For now, we'll simulate a response since we're in development mode
-        // const response = await fetch(apiUrl);
-        // if (!response.ok) throw new Error('Failed to fetch items');
-        // const data = await response.json();
-        // setItems(data.data);
-
-        // Simulated data for development
-        setTimeout(() => {
-          setItems([
-            { id: '1', itemId: 'ITEM001', displayName: 'Sample Item 1', description: 'A sample item for testing', cost: 10.99 },
-            { id: '2', itemId: 'ITEM002', displayName: 'Sample Item 2', description: 'Another sample item', cost: 25.50 }
-          ]);
-          setLoading(false);
-        }, 1000);
-      } catch (err) {
-        setError(err.message);
+        // Uncomment the following lines and update apiUrl with the actual RESTlet endpoint post-deployment
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch items: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        if (data.success && Array.isArray(data.data)) {
+          setItems(data.data);
+        } else {
+          throw new Error('Invalid data format received from API');
+        }
         setLoading(false);
+
+        // Simulated data for development - remove this block post-deployment
+        // setTimeout(() => {
+        //   setItems([
+        //     { id: '1', itemId: 'ITEM001', displayName: 'Sample Item 1', description: 'A sample item for testing', cost: 10.99 },
+        //     { id: '2', itemId: 'ITEM002', displayName: 'Sample Item 2', description: 'Another sample item', cost: 25.50 }
+        //   ]);
+        //   setLoading(false);
+        // }, 1000);
+      } catch (err) {
+        setError(`Error fetching items: ${err.message}`);
+        setLoading(false);
+        console.error('API Error:', err);
       }
     };
 

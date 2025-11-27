@@ -14,24 +14,31 @@ function ProjectList() {
     // Function to fetch project data from RESTlet API
     const fetchProjects = async () => {
       try {
-        // In a real NetSuite Suitelet environment, this would use the actual RESTlet endpoint
-        // For now, we'll simulate a response since we're in development mode
-        // const response = await fetch(apiUrl);
-        // if (!response.ok) throw new Error('Failed to fetch projects');
-        // const data = await response.json();
-        // setProjects(data.data);
-
-        // Simulated data for development
-        setTimeout(() => {
-          setProjects([
-            { id: '1', name: 'Sample Project 1', status: 'In Progress', customer: 'Sample Customer 1', startDate: '2023-01-01', endDate: '2023-12-31' },
-            { id: '2', name: 'Sample Project 2', status: 'Not Started', customer: 'Sample Customer 2', startDate: '2023-02-01', endDate: '2023-11-30' }
-          ]);
-          setLoading(false);
-        }, 1000);
-      } catch (err) {
-        setError(err.message);
+        // Uncomment the following lines and update apiUrl with the actual RESTlet endpoint post-deployment
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch projects: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        if (data.success && Array.isArray(data.data)) {
+          setProjects(data.data);
+        } else {
+          throw new Error('Invalid data format received from API');
+        }
         setLoading(false);
+
+        // Simulated data for development - remove this block post-deployment
+        // setTimeout(() => {
+        //   setProjects([
+        //     { id: '1', name: 'Sample Project 1', status: 'In Progress', customer: 'Customer 1', startDate: '2023-01-01', endDate: '2023-12-31' },
+        //     { id: '2', name: 'Sample Project 2', status: 'Not Started', customer: 'Customer 2', startDate: '2023-03-01', endDate: '2023-09-30' }
+        //   ]);
+        //   setLoading(false);
+        // }, 1000);
+      } catch (err) {
+        setError(`Error fetching projects: ${err.message}`);
+        setLoading(false);
+        console.error('API Error:', err);
       }
     };
 

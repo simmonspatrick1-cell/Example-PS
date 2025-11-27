@@ -14,24 +14,31 @@ function EstimateList() {
     // Function to fetch estimate data from RESTlet API
     const fetchEstimates = async () => {
       try {
-        // In a real NetSuite Suitelet environment, this would use the actual RESTlet endpoint
-        // For now, we'll simulate a response since we're in development mode
-        // const response = await fetch(apiUrl);
-        // if (!response.ok) throw new Error('Failed to fetch estimates');
-        // const data = await response.json();
-        // setEstimates(data.data);
-
-        // Simulated data for development
-        setTimeout(() => {
-          setEstimates([
-            { id: '1', estimateNumber: 'EST001', customer: 'Sample Customer 1', total: 5000.00, status: 'Pending', date: '2023-01-15' },
-            { id: '2', estimateNumber: 'EST002', customer: 'Sample Customer 2', total: 7500.00, status: 'Approved', date: '2023-02-10' }
-          ]);
-          setLoading(false);
-        }, 1000);
-      } catch (err) {
-        setError(err.message);
+        // Uncomment the following lines and update apiUrl with the actual RESTlet endpoint post-deployment
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch estimates: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        if (data.success && Array.isArray(data.data)) {
+          setEstimates(data.data);
+        } else {
+          throw new Error('Invalid data format received from API');
+        }
         setLoading(false);
+
+        // Simulated data for development - remove this block post-deployment
+        // setTimeout(() => {
+        //   setEstimates([
+        //     { id: '1', estimateNumber: 'EST001', customer: 'Sample Customer 1', total: 5000.00, status: 'Pending', date: '2023-01-15' },
+        //     { id: '2', estimateNumber: 'EST002', customer: 'Sample Customer 2', total: 7500.00, status: 'Accepted', date: '2023-02-20' }
+        //   ]);
+        //   setLoading(false);
+        // }, 1000);
+      } catch (err) {
+        setError(`Error fetching estimates: ${err.message}`);
+        setLoading(false);
+        console.error('API Error:', err);
       }
     };
 

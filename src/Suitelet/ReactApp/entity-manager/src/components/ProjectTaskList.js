@@ -14,24 +14,31 @@ function ProjectTaskList() {
     // Function to fetch project task data from RESTlet API
     const fetchTasks = async () => {
       try {
-        // In a real NetSuite Suitelet environment, this would use the actual RESTlet endpoint
-        // For now, we'll simulate a response since we're in development mode
-        // const response = await fetch(apiUrl);
-        // if (!response.ok) throw new Error('Failed to fetch project tasks');
-        // const data = await response.json();
-        // setTasks(data.data);
-
-        // Simulated data for development
-        setTimeout(() => {
-          setTasks([
-            { id: '1', title: 'Task 1', project: 'Sample Project 1', status: 'In Progress', startDate: '2023-01-05', endDate: '2023-01-15' },
-            { id: '2', title: 'Task 2', project: 'Sample Project 2', status: 'Not Started', startDate: '2023-02-01', endDate: '2023-02-10' }
-          ]);
-          setLoading(false);
-        }, 1000);
-      } catch (err) {
-        setError(err.message);
+        // Uncomment the following lines and update apiUrl with the actual RESTlet endpoint post-deployment
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch project tasks: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        if (data.success && Array.isArray(data.data)) {
+          setTasks(data.data);
+        } else {
+          throw new Error('Invalid data format received from API');
+        }
         setLoading(false);
+
+        // Simulated data for development - remove this block post-deployment
+        // setTimeout(() => {
+        //   setTasks([
+        //     { id: '1', title: 'Task 1', project: 'Sample Project 1', status: 'In Progress', startDate: '2023-01-05', endDate: '2023-01-15' },
+        //     { id: '2', title: 'Task 2', project: 'Sample Project 2', status: 'Not Started', startDate: '2023-02-01', endDate: '2023-02-10' }
+        //   ]);
+        //   setLoading(false);
+        // }, 1000);
+      } catch (err) {
+        setError(`Error fetching project tasks: ${err.message}`);
+        setLoading(false);
+        console.error('API Error:', err);
       }
     };
 

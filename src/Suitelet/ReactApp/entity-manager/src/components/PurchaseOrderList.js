@@ -14,24 +14,31 @@ function PurchaseOrderList() {
     // Function to fetch purchase order data from RESTlet API
     const fetchPurchaseOrders = async () => {
       try {
-        // In a real NetSuite Suitelet environment, this would use the actual RESTlet endpoint
-        // For now, we'll simulate a response since we're in development mode
-        // const response = await fetch(apiUrl);
-        // if (!response.ok) throw new Error('Failed to fetch purchase orders');
-        // const data = await response.json();
-        // setPurchaseOrders(data.data);
-
-        // Simulated data for development
-        setTimeout(() => {
-          setPurchaseOrders([
-            { id: '1', poNumber: 'PO001', vendor: 'Sample Vendor 1', total: 2500.00, status: 'Pending Approval', date: '2023-01-10' },
-            { id: '2', poNumber: 'PO002', vendor: 'Sample Vendor 2', total: 7500.00, status: 'Approved', date: '2023-02-05' }
-          ]);
-          setLoading(false);
-        }, 1000);
-      } catch (err) {
-        setError(err.message);
+        // Uncomment the following lines and update apiUrl with the actual RESTlet endpoint post-deployment
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch purchase orders: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        if (data.success && Array.isArray(data.data)) {
+          setPurchaseOrders(data.data);
+        } else {
+          throw new Error('Invalid data format received from API');
+        }
         setLoading(false);
+
+        // Simulated data for development - remove this block post-deployment
+        // setTimeout(() => {
+        //   setPurchaseOrders([
+        //     { id: '1', poNumber: 'PO001', vendor: 'Sample Vendor 1', total: 2500.00, status: 'Pending Approval', date: '2023-01-10' },
+        //     { id: '2', poNumber: 'PO002', vendor: 'Sample Vendor 2', total: 7500.00, status: 'Approved', date: '2023-02-05' }
+        //   ]);
+        //   setLoading(false);
+        // }, 1000);
+      } catch (err) {
+        setError(`Error fetching purchase orders: ${err.message}`);
+        setLoading(false);
+        console.error('API Error:', err);
       }
     };
 
