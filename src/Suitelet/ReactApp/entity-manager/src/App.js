@@ -2,6 +2,8 @@ import React from 'react';
 import './App.css';
 import CustomerList from './components/CustomerList';
 import ItemList from './components/ItemList';
+import ProjectList from './components/ProjectList';
+import EstimateList from './components/EstimateList';
 
 function App() {
   return (
@@ -13,6 +15,8 @@ function App() {
       <main>
         <CustomerList />
         <ItemList />
+        <ProjectList />
+        <EstimateList />
       </main>
     </div>
   );
